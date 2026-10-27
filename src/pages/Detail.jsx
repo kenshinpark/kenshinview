@@ -14,29 +14,32 @@ export default function Detail({ type }) {
   const [episodes, setEpisodes] = useState([]);
   const [tmdbId, setTmdbId] = useState(null);
   const [saved, setSaved] = useState(false);
+  const [similar, setSimilar] = useState([]);
 
   useEffect(() => {
     setLoading(true);
     (async () => {
       try {
         const media = type === 'tv' ? 'tv' : 'movie';
-        const data = await tmdb(`/${media}/${id}`, { append_to_response: 'credits,videos,recommendations' });
-        // append_to_response handled as extra param sometimes; fetch seasons separately for tv
-        const full = await tmdb(`/${media}/${id}`);
-        setDetail({ ...full, ...data });
-        setTmdbId((full.id || data.id));
+        const full = await tmdb(`/${media}/${id}`, { append_to_response: 'recommendations' });
+        setDetail(full);
+        setTmdbId(full.id);
         const list = load('cinrift_watchlist', []);
-        const mid = full.id || data.id;
-        setSaved(list.some(x => x.tmdbId === mid && x.mediaType === media));
+        setSaved(list.some(x => x.tmdbId === full.id && x.mediaType === media));
         if (media === 'tv') {
+          const valid = (full.seasons || []).filter(s => s.season_number > 0);
+          setSeasons(valid.length ? valid : (full.seasons || []));
+          const first = valid.length ? valid[0] : (full.seasons || [])[0];
+          if (first) setSeason(first.season_number);
+        }
+        let sim = (full.recommendations && full.recommendations.results) || [];
+        if (!sim.length) {
           try {
-            const withSeasons = await tmdb(`/${media}/${id}`);
-            const valid = (withSeasons.seasons || []).filter(s => s.season_number > 0);
-            setSeasons(valid.length ? valid : (withSeasons.seasons || []));
-            const first = valid.length ? valid[0] : (withSeasons.seasons || [])[0];
-            if (first) setSeason(first.season_number);
+            const rec = await tmdb(`/${media}/${id}/recommendations`);
+            sim = rec.results || [];
           } catch {}
         }
+        setSimilar((sim || []).slice(0, 16));
       } catch (e) { console.error(e); }
       finally { setLoading(false); }
     })();
@@ -90,57 +93,67 @@ export default function Detail({ type }) {
       <div style={{marginBottom:16}}>
         <Link to="/" className="back-btn">← Back</Link>
       </div>
-    <div className="detail-hero">
-      <div className="detail-poster-box">
-        {poster && <img className="poster" src={poster} alt={title} />}
-      </div>
-      <div className="detail-info">
-        <div className="detail-header">
+      <section className="hero" style={{minHeight:'40vh'}}>
+        {backdrop && <img src={backdrop} alt={title} />}
+        <div className="overlay" />
+        <div className="info">
           <h1>{title}</h1>
-          <div className="detail-meta">
-            <span>{year}</span>
-            <span className="separator">•</span>
-            <span className="rating">★ {rating?.toFixed?.(1)}</span>
-            {detail.genres && <span className="genres">{detail.genres.map(g=>g.name).join(', ')}</span>}
+          <p>{detail.overview}</p>
+          <div className="actions">
+            <button className="btn-primary" onClick={() => nav(playPath)}>Play</button>
+            <button className="btn-secondary" onClick={toggleSave}>{saved ? 'Saved' : 'Add to List'}</button>
           </div>
         </div>
-        <p className="detail-overview">{detail.overview}</p>
-        <div className="detail-actions">
-          <button className="btn-primary" onClick={() => nav(playPath)}>Play Now</button>
-          <button className="btn-secondary" onClick={toggleSave}>{saved ? '✓ Saved' : 'Add to List'}</button>
-        </div>
-        {media === 'tv' && (
-          <div className="episode-selector">
-            <div className="selector-row">
-              <div className="selector-group">
-                <label>Season</label>
-                <select value={season} onChange={e=>setSeason(Number(e.target.value))} className="control-select">
-                  {seasons.map(s => <option key={s.id} value={s.season_number}>Season {s.season_number}</option>)}
-                </select>
-              </div>
-              <div className="selector-group">
-                <label>Episode</label>
-                <select value={episodeSel} onChange={e=>setEpisodeSel(Number(e.target.value))} className="control-select">
-                  {episodes.map(ep => <option key={ep.id} value={ep.episode_number}>E{ep.episode_number}: {ep.name}</option>)}
-                </select>
-              </div>
-            </div>
-            {episodes.length > 0 && (
-              <div className="episode-grid">
-                {episodes.map(ep => (
-                  <Link key={ep.id} to={`/tv/${id}/watch?season=${season}&episode=${ep.episode_number}`} className="card card-ep">
-                    <div className="poster-thumb">
-                      {ep.still_path ? <img src={imgPath(ep.still_path,'w300')} alt={ep.name} /> : null}
+      </section>
+
+      <div className="detail">
+        <div>{poster && <img className="poster" src={poster} alt={title} />}</div>
+        <div>
+          <p><strong>Year:</strong> {year} · <strong>Rating:</strong> ★ {rating?.toFixed?.(1)}</p>
+          {detail.genres && <p>{detail.genres.map(g=>g.name).join(', ')}</p>}
+          {detail.runtime ? <p><strong>Runtime:</strong> {detail.runtime} min</p> : null}
+          {media === 'tv' && (
+            <div style={{marginTop:16}}>
+              {seasons.length ? (
+                <>
+                  <div style={{display:'flex', gap:12, flexWrap:'wrap'}}>
+                    <label>Season <select value={season} onChange={e=>setSeason(Number(e.target.value))} className="control-select">
+                      {seasons.map(s => <option key={s.id} value={s.season_number}>Season {s.season_number}</option>)}
+                    </select></label>
+                    <label>Episode <select value={episodeSel} onChange={e=>setEpisodeSel(Number(e.target.value))} className="control-select">
+                      {episodes.map(ep => <option key={ep.id} value={ep.episode_number}>E{ep.episode_number} {ep.name}</option>)}
+                    </select></label>
+                  </div>
+                  {episodes.length > 0 && (
+                    <div className="row" style={{marginTop:12}}>
+                      {episodes.map(ep => (
+                        <Link key={ep.id} to={`/tv/${id}/watch?season=${season}&episode=${ep.episode_number}`} className="card card-ep">
+                          <div className="poster" style={{aspectRatio:'16/9'}}>{ep.still_path ? <img src={imgPath(ep.still_path,'w300')} alt={ep.name} /> : null}</div>
+                          <div className="title">E{ep.episode_number} {ep.name}</div>
+                        </Link>
+                      ))}
                     </div>
-                    <div className="title">E{ep.episode_number} {ep.name}</div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                  )}
+                </>
+              ) : <span style={{color:'var(--muted)',fontSize:13}}>No season data available.</span>}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      {similar.length > 0 && (
+        <section style={{marginTop:24}}>
+          <h2>More like this</h2>
+          <div className="row">
+            {similar.map(r => (
+              <Link key={r.id} to={`/${r.first_air_date?'tv':'movie'}/${r.id}`} className="card card-sm">
+                <div className="poster">{r.poster_path ? <img src={imgPath(r.poster_path,'w300')} alt={r.title||r.name} /> : null}</div>
+                <div className="title">{r.title||r.name}</div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
