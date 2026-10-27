@@ -142,6 +142,19 @@ select:focus, input:focus { border-color: rgba(10,132,255,0.6); }
 .now-playing { font-weight: 600; letter-spacing: -0.01em; }
 .mouse-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 8px 22px rgba(10,132,255,0.35); }
 .mouse-hint { padding: 8px 16px 14px; text-align: center; font-size: 13px; color: var(--muted); background: rgba(10,10,15,0.72); }
+@media (max-width: 768px) {
+  .mouse-hint { display: none; }
+  .controls-bar .back-btn,
+  .controls-bar .fs-btn,
+  .controls-bar .mouse-btn {
+    display: none;
+  }
+  /* Hide entire actions bar actions that are TV-only on mobile? Keep Prev/Next still possibly useful; hide mouse etc */
+  .controls-bar .mouse-btn { display: none; }
+}
+@media (max-width: 480px) {
+  .controls-bar { padding: 8px 10px; }
+}
 .control-select, .control-input { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14); color: var(--text); padding: 10px 14px; border-radius: var(--radius-pill); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); font-weight: 500; }
 .control-label { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14); padding: 8px 12px; border-radius: var(--radius-pill); backdrop-filter: blur(22px); }
 .source-bar button { border-radius: var(--radius-pill); padding: 8px 14px; font-weight: 500; }

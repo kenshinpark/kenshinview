@@ -155,7 +155,7 @@ export default function Watch() {
         <div className="controls-bar-actions">
           {isTv && prevEp && <Link to={`/tv/${id}/watch?season=${season}&episode=${prevEp}`}><button>Prev</button></Link>}
           {isTv && <Link to={`/tv/${id}/watch?season=${season}&episode=${nextEp}`}><button>Next</button></Link>}
-          <button onClick={toggleFullscreen}>Fullscreen</button>
+          <button onClick={toggleFullscreen} className="fs-btn">Fullscreen</button>>
           <button className={mouseOn ? 'mouse-btn active' : 'mouse-btn'} onClick={toggleMouse}>
             {mouseOn ? 'Mouse: On' : 'Mouse: Off'}
           </button>
