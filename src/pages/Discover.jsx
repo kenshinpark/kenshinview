@@ -35,6 +35,7 @@ export default function Discover() {
   const [type, setType] = useState('movie');
   const [genre, setGenre] = useState('');
   const [country, setCountry] = useState('');
+  const [hideUnreleased, setHideUnreleased] = useState(true);
   const [year, setYear] = useState('');
   const [rating, setRating] = useState('');
   const [sort, setSort] = useState('popular');
@@ -61,6 +62,11 @@ export default function Discover() {
       if (rating) params['vote_average.gte'] = rating;
       if (rating) params['vote_count.gte'] = 50;
       if (country) params.with_origin_country = country;
+      if (hideUnreleased) {
+        const today = new Date().toISOString().slice(0, 10);
+        if (type === 'movie') params['primary_release_date.lte'] = today;
+        else params['first_air_date.lte'] = today;
+      }
       const path = type === 'movie' ? '/discover/movie' : '/discover/tv';
       const data = await tmdb(path, params);
       const norm = (x) => ({ id:x.id, title: x.title||x.name, mediaType: type, poster: IMG(x.poster_path,'w342'), rating: x.vote_average });
@@ -72,7 +78,7 @@ export default function Discover() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchPage(1, true); }, [type, genre, country, year, rating, sort]);
+  useEffect(() => { fetchPage(1, true); }, [type, genre, country, hideUnreleased, year, rating, sort]);
 
   return (
     <div>
@@ -90,6 +96,10 @@ export default function Discover() {
           <option value="">Any country</option>
           {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
         </select>
+        <label style={{display:'inline-flex',alignItems:'center',gap:8,fontSize:13,whiteSpace:'nowrap',padding:'8px 12px',borderRadius:999,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.14)'}}>
+          <input type="checkbox" checked={hideUnreleased} onChange={e=>setHideUnreleased(e.target.checked)} />
+          Hide unreleased
+        </label>
         <input placeholder="Year" value={year} onChange={e=>setYear(e.target.value)} style={{width:90}} />
         <select value={rating} onChange={e=>setRating(e.target.value)}>
           <option value="">Any rating</option>
