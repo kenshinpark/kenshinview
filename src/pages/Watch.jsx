@@ -200,6 +200,17 @@ export default function Watch() {
     };
   }, []);
 
+  // Release iframe/video memory on unmount (navigating away from watch page)
+  useEffect(() => {
+    return () => {
+      if (hideTimer.current) clearTimeout(hideTimer.current);
+      // Signal the embedded player to stop, then blank the iframe src
+      // so the video element is destroyed and memory is released.
+      try { iframeRef.current?.contentWindow?.postMessage({ type: 'vidrift:exit' }, EH); } catch {}
+      try { iframeRef.current.src = 'about:blank'; } catch {}
+    };
+  }, []);
+
   const prevEp = episode > 1 ? episode - 1 : null;
   const nextEp = episode + 1;
 

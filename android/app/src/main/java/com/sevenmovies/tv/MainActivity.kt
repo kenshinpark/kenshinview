@@ -1,8 +1,10 @@
 package com.sevenmovies.tv
 
+import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.os.PowerManager
 import android.os.SystemClock
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -31,6 +33,10 @@ class MainActivity : AppCompatActivity() {
     @Volatile
     private var isCssFullscreen = false
 
+    // Wake lock to keep the screen on during video playback (prevents
+    // screensaver/sleep from activating mid-watch).
+    private var wakeLock: PowerManager.WakeLock? = null
+
     // On-screen (virtual) mouse for Android TV remotes
     private var cursor: View? = null
     private var mouseEnabled = false
@@ -42,6 +48,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         // Keep screen on during playback
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        // Acquire a wake lock so the screensaver/sleep cannot activate mid-watch
+        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+        wakeLock = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, "VidRift:VideoPlayback")
+        wakeLock?.acquire()
         setContentView(R.layout.activity_main)
         root = findViewById(android.R.id.content)
         webView = findViewById(R.id.webview)
@@ -343,5 +353,11 @@ class MainActivity : AppCompatActivity() {
         fun log(msg: String) {
             android.util.Log.e("VidRiftWEB", msg)
         }
+    }
+
+    override fun onDestroy() {
+        wakeLock?.release()
+        wakeLock = null
+        super.onDestroy()
     }
 }
