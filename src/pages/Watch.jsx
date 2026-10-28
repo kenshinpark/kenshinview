@@ -52,7 +52,6 @@ export default function Watch() {
   };
 
   const startHideTimer = () => {
-    if (!isFullscreen) return;
     if (hideTimer.current) clearTimeout(hideTimer.current);
     hideTimer.current = setTimeout(() => {
       hideControls();
@@ -60,7 +59,6 @@ export default function Watch() {
   };
 
   const onUserActivity = () => {
-    if (!isFullscreen) return;
     showControls();
     startHideTimer();
   };
@@ -103,24 +101,25 @@ export default function Watch() {
     };
   }, [send]);
 
-  // Auto-hide controls after 3s of inactivity when in fullscreen.
+  // Auto-hide controls after 3s of inactivity.
   // Any key/mouse activity brings them back and resets the timer.
   useEffect(() => {
     const onActivity = () => {
-      if (!isFullscreen) return;
       showControls();
       startHideTimer();
     };
     window.addEventListener('keydown', onActivity);
     window.addEventListener('mousemove', onActivity);
     window.addEventListener('pointermove', onActivity);
+    // Start the timer on mount so controls fade out after a few seconds
+    startHideTimer();
     return () => {
       window.removeEventListener('keydown', onActivity);
       window.removeEventListener('mousemove', onActivity);
       window.removeEventListener('pointermove', onActivity);
       if (hideTimer.current) clearTimeout(hideTimer.current);
     };
-  }, [isFullscreen]);
+  }, []);
 
   useEffect(() => {
     const handler = (e) => {
