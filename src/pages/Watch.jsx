@@ -33,7 +33,11 @@ export default function Watch() {
         try { iframeRef.current?.contentWindow?.postMessage({ type: 'vidrift:fullscreen-state', on: false }, EH); } catch {}
       }
     };
-    try { setMouseOn(!!window.KenshinView?.isMouse?.()); } catch {}
+    try {
+      if (typeof window.KenshinView?.setMouse === 'function') window.KenshinView.setMouse(true);
+      setMouseOn(!!window.KenshinView ? true : !!window.KenshinView?.isMouse?.());
+    } catch {}
+    if (!window.KenshinView) setMouseOn(false);
     return () => { delete window.__kenshinMouseState; delete window.__kenshinFullscreenState; };
   }, []);
 
@@ -205,6 +209,7 @@ export default function Watch() {
       if (hideTimer.current) clearTimeout(hideTimer.current);
       // Signal the embedded player to stop, then blank the iframe src
       // so the video element is destroyed and memory is released.
+      try { window.KenshinView?.setMouse?.(false); } catch {}
       try { iframeRef.current?.contentWindow?.postMessage({ type: 'vidrift:exit' }, EH); } catch {}
       try { iframeRef.current.src = 'about:blank'; } catch {}
     };
