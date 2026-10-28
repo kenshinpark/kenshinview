@@ -143,15 +143,23 @@ export default function Detail({ type }) {
       )}
 
       {media !== 'tv' && (
-        <div className="detail">
-          <div>{poster && <img className="poster" src={poster} alt={title} />}</div>
-          <div>
-            <p><strong>Year:</strong> {year} · <strong>Rating:</strong> ★ {rating?.toFixed?.(1)}</p>
-            {detail.genres && <p>{detail.genres.map(g=>g.name).join(', ')}</p>}
-            {detail.runtime ? <p><strong>Runtime:</strong> {detail.runtime} min</p> : null}
+        <>        {/* Movies use the same overlay layout as series, without season/episode selector */}
+        {backdrop && <img src={backdrop} alt={title} />}
+        <div className="overlay" />
+        <div className="info">
+          <h1>{title}</h1>
+          <div className="hero-meta">
+            {year && <span>{year}</span>}
+            {rating && <span>★ {rating.toFixed(1)}</span>}
+            {detail.genres && <span>{detail.genres.map(g=>g.name).join(', ')}</span>}
+          </div>
+          <p>{detail.overview}</p>
+          <div className="actions">
+            <button className="btn-primary" onClick={() => nav(playPath)}>Play</button>
+            <button className="btn-secondary" onClick={toggleSave}>{saved ? 'Saved' : 'Add to List'}</button>
           </div>
         </div>
-      )}
+      </>)}
 
       {similar.length > 0 && (
         <section style={{marginTop:24}}>

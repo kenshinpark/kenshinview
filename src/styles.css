@@ -162,6 +162,9 @@ select:focus, input:focus { border-color: rgba(10,132,255,0.6); }
 .hero-meta { display: flex; gap: 16px; margin: 12px 0 18px 0; font-size: 15px; color: var(--muted); align-items: center; flex-wrap: wrap; }
 .hero-meta span { display: flex; align-items: center; gap: 6px; }
 
+/* Movie title truncation in overlay */
+.info h1 { font-size: 44px; font-weight: 700; letter-spacing: -1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
 /* Season selector bar just below the hero overlay */
 .season-bar { margin: 20px 0 12px 0; display: flex; gap: 12px; align-items: center; }
 .season-bar label { font-size: 14px; font-weight: 500; color: var(--text); }
