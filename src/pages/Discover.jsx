@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { tmdb, IMG } from '../tmdb.js';
+import { loadSettings, saveSettings } from '../api.js';
 
 const GENRES_MOVIE = [
   {id:28,name:'Action'},{id:12,name:'Adventure'},{id:16,name:'Animation'},{id:35,name:'Comedy'},
@@ -35,7 +36,7 @@ export default function Discover() {
   const [type, setType] = useState('movie');
   const [genre, setGenre] = useState('');
   const [country, setCountry] = useState('');
-  const [hideUnreleased, setHideUnreleased] = useState(true);
+  const [hideUnreleased, setHideUnreleased] = useState(() => loadSettings().hideUnreleased);
   const [year, setYear] = useState('');
   const [rating, setRating] = useState('');
   const [sort, setSort] = useState('popular');
@@ -43,6 +44,17 @@ export default function Discover() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
+
+  // Keep local filter in sync with the global preference (updated on the Settings page).
+  useEffect(() => {
+    const refresh = () => setHideUnreleased(loadSettings().hideUnreleased);
+    window.addEventListener('cinrift:settings', refresh);
+    window.addEventListener('storage', refresh);
+    return () => {
+      window.removeEventListener('cinrift:settings', refresh);
+      window.removeEventListener('storage', refresh);
+    };
+  }, []);
 
   const sortMap = {
     popular: 'popularity.desc',
@@ -97,7 +109,11 @@ export default function Discover() {
           {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
         </select>
         <label style={{display:'inline-flex',alignItems:'center',gap:8,fontSize:13,whiteSpace:'nowrap',padding:'8px 12px',borderRadius:999,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.14)'}}>
-          <input type="checkbox" checked={hideUnreleased} onChange={e=>setHideUnreleased(e.target.checked)} />
+          <input type="checkbox" checked={hideUnreleased} onChange={e => {
+            const v = e.target.checked;
+            setHideUnreleased(v);
+            try { saveSettings({ ...loadSettings(), hideUnreleased: v }); } catch {}
+          }} />
           Hide unreleased
         </label>
         <input placeholder="Year" value={year} onChange={e=>setYear(e.target.value)} style={{width:90}} />

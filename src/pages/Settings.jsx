@@ -51,6 +51,13 @@ export default function Settings() {
         >
           <input type="checkbox" checked={settings.showContinueWatching} onChange={() => toggle('showContinueWatching')} />
         </SettingItem>
+
+        <SettingItem
+          label="Hide unreleased"
+          description="Hide movies and shows that haven't been released yet."
+        >
+          <input type="checkbox" checked={settings.hideUnreleased} onChange={() => toggle('hideUnreleased')} />
+        </SettingItem>
       </SettingSection>
 
       <SettingSection title="Privacy">

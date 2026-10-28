@@ -22,7 +22,14 @@ export const DEFAULT_SETTINGS = {
   showContinueWatching: true,
   watchHistory: true,
   recentSearches: true,
+  hideUnreleased: true,
 };
+
+export function saveSettings(s) {
+  try { localStorage.setItem('cinrift_settings', JSON.stringify({ ...DEFAULT_SETTINGS, ...(s || {}) })); } catch {}
+  // Notify other pages (e.g. Discover) that prefs changed.
+  try { window.dispatchEvent(new Event('cinrift:settings')); } catch {}
+}
 
 export function loadSettings() {
   try {
@@ -34,9 +41,6 @@ export function loadSettings() {
   }
 }
 
-export function saveSettings(s) {
-  try { localStorage.setItem('cinrift_settings', JSON.stringify({ ...DEFAULT_SETTINGS, ...(s || {}) })); } catch {}
-}
 
 export const DEFAULT_UPSTREAM = '';
 export { APP_NAME };
