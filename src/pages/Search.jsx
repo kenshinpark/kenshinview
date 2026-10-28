@@ -1,12 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { tmdb, IMG } from '../tmdb.js';
+import { load, loadSettings } from '../api.js';
 
 export default function SearchPage() {
   const [params] = useSearchParams();
   const q = params.get('q') || '';
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [recent, setRecent] = useState(() => load('cinrift_recentSearches', []));
+
+  const refresh = useCallback(() => setRecent(load('cinrift_recentSearches', [])), []);
+  useEffect(() => {
+    refresh();
+    window.addEventListener('cinrift:searchhistory', refresh);
+    window.addEventListener('storage', refresh);
+    return () => {
+      window.removeEventListener('cinrift:searchhistory', refresh);
+      window.removeEventListener('storage', refresh);
+    };
+  }, [refresh]);
 
   useEffect(() => {
     if (q.trim().length < 2) { setItems([]); return; }
@@ -34,6 +47,14 @@ export default function SearchPage() {
   return (
     <div>
       <h1>Search: {q}</h1>
+      {loadSettings().recentSearches && recent.length > 0 && (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '12px 0 24px' }}>
+          <span style={{ color: 'var(--muted)', fontSize: 13, alignSelf: 'center' }}>Recent:</span>
+          {recent.map(r => (
+            <Link key={r} to={`/search?q=${encodeURIComponent(r)}`} className="control-label" style={{ textDecoration: 'none' }}>{r}</Link>
+          ))}
+        </div>
+      )}
       {loading && <div className="loader">Searching…</div>}
       <div className="grid">
         {items.map(it => (

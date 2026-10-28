@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { load, store, loadSettings } from './api.js';
 import { HashRouter, Routes, Route, Link, useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import Home from './pages/Home.jsx';
 import Movies from './pages/Movies.jsx';
@@ -16,7 +17,18 @@ function Topbar() {
   const nav = useNavigate();
   const submit = (e) => {
     e.preventDefault();
-    if (q.trim()) nav(`/search?q=${encodeURIComponent(q.trim())}`);
+    const query = q.trim();
+    if (!query) return;
+    // Record recent searches when enabled
+    try {
+      if (loadSettings().recentSearches) {
+        const list = load('cinrift_recentSearches', []);
+        const next = [query, ...list.filter(x => x !== query)].slice(0, 10);
+        store('cinrift_recentSearches', next);
+        window.dispatchEvent(new Event('cinrift:searchhistory'));
+      }
+    } catch {}
+    nav(`/search?q=${encodeURIComponent(query)}`);
   };
   return (
     <header className="topbar">

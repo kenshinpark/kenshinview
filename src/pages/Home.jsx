@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import Rail from '../components/Rail.jsx';
 import { tmdb, IMG } from '../tmdb.js';
+import { load, loadSettings } from '../api.js';
 
 const norm = (x, type) => ({
   id: x.id,
@@ -24,6 +25,21 @@ export default function Home() {
   const [topTv, setTopTv] = useState([]);
   const [nowPlaying, setNowPlaying] = useState([]);
   const [airingToday, setAiringToday] = useState([]);
+  const [continueWatching, setContinueWatching] = useState(() => load('cinrift_watchHistory', []));
+
+  const refreshContinue = useCallback(() => {
+    setContinueWatching(load('cinrift_watchHistory', []));
+  }, []);
+
+  useEffect(() => {
+    refreshContinue();
+    window.addEventListener('cinrift:watchhistory', refreshContinue);
+    window.addEventListener('storage', refreshContinue);
+    return () => {
+      window.removeEventListener('cinrift:watchhistory', refreshContinue);
+      window.removeEventListener('storage', refreshContinue);
+    };
+  }, [refreshContinue]);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,6 +76,9 @@ export default function Home() {
 
   if (loading) return <div className="loader">Loading…</div>;
 
+  const settings = loadSettings();
+  const continueRow = (settings.showContinueWatching && settings.watchHistory) ? continueWatching : [];
+
   return (
     <div>
       {hero && (
@@ -76,6 +95,7 @@ export default function Home() {
           </div>
         </section>
       )}
+      <Rail title="Continue Watching" items={continueRow} />
       <Rail title="Trending Movies" items={trending} />
       <Rail title="Trending TV Shows" items={trendingTv} />
       <Rail title="Now Playing" items={nowPlaying} />

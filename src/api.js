@@ -17,5 +17,26 @@ export function load(key, fallback=[]) {
   try { const v = JSON.parse(localStorage.getItem(key)); return v ?? fallback; } catch { return fallback; }
 }
 
+// Persisted app settings (watch history, continue watching, recent searches, etc.)
+export const DEFAULT_SETTINGS = {
+  showContinueWatching: true,
+  watchHistory: true,
+  recentSearches: true,
+};
+
+export function loadSettings() {
+  try {
+    const v = JSON.parse(localStorage.getItem('cinrift_settings'));
+    if (v && typeof v === 'object') return { ...DEFAULT_SETTINGS, ...v };
+    return { ...DEFAULT_SETTINGS };
+  } catch {
+    return { ...DEFAULT_SETTINGS };
+  }
+}
+
+export function saveSettings(s) {
+  try { localStorage.setItem('cinrift_settings', JSON.stringify({ ...DEFAULT_SETTINGS, ...(s || {}) })); } catch {}
+}
+
 export const DEFAULT_UPSTREAM = '';
 export { APP_NAME };

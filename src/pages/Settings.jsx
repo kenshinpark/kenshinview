@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { load, loadSettings, saveSettings } from '../api.js';
 
 const SettingItem = ({ label, description, children }) => (
   <div className="settings-item">
@@ -21,92 +22,64 @@ const SettingSection = ({ title, children }) => (
   </div>
 );
 
+const ACTION_STYLE = { background: 'transparent', border: '1px solid rgba(255,255,255,0.18)', color: 'var(--muted)', padding: '8px 14px', borderRadius: 12, cursor: 'pointer' };
+
 export default function Settings() {
-  const [settings, setSettings] = useState({
-    autoplayNext: true,
-    quality: 'Auto',
-    trailerAutoplay: false,
-    cardPreviews: true,
-    skipIntros: false,
-    showContinueWatching: true,
-    watchHistory: true,
-    recentSearches: true,
-  });
+  const [settings, setSettings] = useState(loadSettings);
+
+  useEffect(() => { saveSettings(settings); }, [settings]);
 
   const toggle = (key) => setSettings(prev => ({ ...prev, [key]: !prev[key] }));
-  const setVal = (key, val) => setSettings(prev => ({ ...prev, [key]: val }));
+
+  const clearWatchHistory = () => { try { localStorage.removeItem('cinrift_watchHistory'); } catch {} window.dispatchEvent(new Event('cinrift:watchhistory')); };
+  const clearSearchHistory = () => { try { localStorage.removeItem('cinrift_recentSearches'); } catch {} window.dispatchEvent(new Event('cinrift:searchhistory')); };
+
+  const historyCount = (load('cinrift_watchHistory', []) || []).length;
+  const searchCount = (load('cinrift_recentSearches', []) || []).length;
 
   return (
     <div className="settings-page">
       <div className="settings-header">
         <h1>Settings</h1>
-        <p>Customize your viewing experience</p>
+        <p>Lightweight preferences. Everything is stored on this device only.</p>
       </div>
 
-      <SettingSection title="Playback">
-        <SettingItem 
-          label="Autoplay next episode" 
-          description="Start the next episode only after the current episode finishes."
-        >
-          <input type="checkbox" checked={settings.autoplayNext} onChange={() => toggle('autoplayNext')} />
-        </SettingItem>
-
-        <SettingItem 
-          label="Quality" 
-          description="Auto adapts to your connection."
-        >
-          <select value={settings.quality} onChange={e => setVal('quality', e.target.value)} className="control-select">
-            <option value="Auto">Auto</option>
-            <option value="1080p">1080p</option>
-            <option value="720p">720p</option>
-            <option value="480p">480p</option>
-          </select>
-        </SettingItem>
-
-        <SettingItem 
-          label="Title page trailer" 
-          description="Autoplay the trailer at the top of movie and show pages."
-        >
-          <input type="checkbox" checked={settings.trailerAutoplay} onChange={() => toggle('trailerAutoplay')} />
-        </SettingItem>
-
-        <SettingItem 
-          label="Card previews" 
-          description="Play a trailer when you hover a card on desktop."
-        >
-          <input type="checkbox" checked={settings.cardPreviews} onChange={() => toggle('cardPreviews')} />
-        </SettingItem>
-
-        <SettingItem 
-          label="Skip intros" 
-          description="Jump past intros and recaps automatically."
-        >
-          <input type="checkbox" checked={settings.skipIntros} onChange={() => toggle('skipIntros')} />
-        </SettingItem>
-      </SettingSection>
-
       <SettingSection title="Appearance">
-        <SettingItem 
-          label="Continue watching" 
-          description="Show in-progress titles at the top of the home page."
+        <SettingItem
+          label="Continue watching"
+          description="Show the titles you recently started on the Home page."
         >
           <input type="checkbox" checked={settings.showContinueWatching} onChange={() => toggle('showContinueWatching')} />
         </SettingItem>
       </SettingSection>
 
       <SettingSection title="Privacy">
-        <SettingItem 
-          label="Watch history" 
-          description="Save what you watch so you can pick up where you left off."
+        <SettingItem
+          label="Watch history"
+          description="Remember what you've played so you can resume quickly."
         >
           <input type="checkbox" checked={settings.watchHistory} onChange={() => toggle('watchHistory')} />
         </SettingItem>
 
-        <SettingItem 
-          label="Recent searches" 
-          description="Keep your last few searches in the search panel."
+        <SettingItem
+          label="Recent searches"
+          description="Keep your last searches available in search."
         >
           <input type="checkbox" checked={settings.recentSearches} onChange={() => toggle('recentSearches')} />
+        </SettingItem>
+
+        <SettingItem
+          label="Clear watch history"
+          description={`${historyCount} item${historyCount === 1 ? '' : 's'} stored.`}
+        >
+          <button style={ACTION_STYLE} onClick={clearWatchHistory} disabled={historyCount === 0}>Clear</button>
+        </SettingItem>
+
+        <SettingItem
+          label="Clear recent searches"
+          description={`${searchCount} quer${searchCount === 1 ? 'y' : 'ies'} stored.`}
+        >
+          <button style={ACTION_STYLE} onClick={clearSearchHistory} disabled={searchCount === 0}>Clear</button>
         </SettingItem>
       </SettingSection>
     </div>

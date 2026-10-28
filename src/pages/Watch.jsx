@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom';
-import { tmdb } from '../tmdb.js';
-
+import { tmdb, IMG } from '../tmdb.js';
+import { load, store, loadSettings } from '../api.js';
 const EH = 'https://embed.vidrift.net';
 
 export default function Watch() {
@@ -144,7 +144,25 @@ export default function Watch() {
       try {
         const media = isTv ? 'tv' : 'movie';
         const d = await tmdb(`/${media}/${id}`);
-        setTitle(d.title || d.name || '');
+        const titleName = d.title || d.name || '';
+        setTitle(titleName);
+        // Record watch history (if enabled) so Home can show "Continue watching".
+        try {
+          if (loadSettings().watchHistory) {
+            const item = {
+              id: Number(id),
+              mediaType: media,
+              title: titleName,
+              poster: IMG(d.poster_path, 'w342'),
+              backdrop: IMG(d.backdrop_path, 'w780'),
+              ts: Date.now(),
+            };
+            const list = load('cinrift_watchHistory', []);
+            const next = [item, ...list.filter(x => !(x.id === item.id && x.mediaType === item.mediaType))].slice(0, 24);
+            store('cinrift_watchHistory', next);
+            window.dispatchEvent(new Event('cinrift:watchhistory'));
+          }
+        } catch {}
       } catch {}
     })();
   }, [id, isTv]);
