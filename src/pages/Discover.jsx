@@ -13,9 +13,28 @@ const GENRES_TV = [
   {id:16,name:'Animation'},{id:99,name:'Documentary'}
 ];
 
+const COUNTRIES = [
+  {code:'US',name:'United States'},
+  {code:'GB',name:'United Kingdom'},
+  {code:'JP',name:'Japan'},
+  {code:'KR',name:'South Korea'},
+  {code:'FR',name:'France'},
+  {code:'DE',name:'Germany'},
+  {code:'IN',name:'India'},
+  {code:'CN',name:'China'},
+  {code:'ES',name:'Spain'},
+  {code:'IT',name:'Italy'},
+  {code:'AU',name:'Australia'},
+  {code:'CA',name:'Canada'},
+  {code:'BR',name:'Brazil'},
+  {code:'MX',name:'Mexico'},
+  {code:'HK',name:'Hong Kong'},
+  {code:'TW',name:'Taiwan'},
+];
 export default function Discover() {
   const [type, setType] = useState('movie');
   const [genre, setGenre] = useState('');
+  const [country, setCountry] = useState('');
   const [year, setYear] = useState('');
   const [rating, setRating] = useState('');
   const [sort, setSort] = useState('popular');
@@ -41,6 +60,7 @@ export default function Discover() {
       }
       if (rating) params['vote_average.gte'] = rating;
       if (rating) params['vote_count.gte'] = 50;
+      if (country) params.with_origin_country = country;
       const path = type === 'movie' ? '/discover/movie' : '/discover/tv';
       const data = await tmdb(path, params);
       const norm = (x) => ({ id:x.id, title: x.title||x.name, mediaType: type, poster: IMG(x.poster_path,'w342'), rating: x.vote_average });
@@ -52,16 +72,23 @@ export default function Discover() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchPage(1, true); }, [type, genre, year, rating, sort]);
+  useEffect(() => { fetchPage(1, true); }, [type, genre, country, year, rating, sort]);
 
   return (
     <div>
       <h1>Discover</h1>
       <div className="filters">
-        <button onClick={() => setType(t => t === 'movie' ? 'tv' : 'movie')}>{type === 'movie' ? 'Movies' : 'TV shows'}</button>
+        <select className="control-select" value={type} onChange={e=>setType(e.target.value)}>
+          <option value="movie">Movies</option>
+          <option value="tv">TV shows</option>
+        </select>
         <select value={genre} onChange={e=>setGenre(e.target.value)}>
           <option value="">Any genre</option>
           {(type === 'movie' ? GENRES_MOVIE : GENRES_TV).map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+        </select>
+        <select value={country} onChange={e=>setCountry(e.target.value)}>
+          <option value="">Any country</option>
+          {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
         </select>
         <input placeholder="Year" value={year} onChange={e=>setYear(e.target.value)} style={{width:90}} />
         <select value={rating} onChange={e=>setRating(e.target.value)}>
