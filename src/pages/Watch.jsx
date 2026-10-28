@@ -14,8 +14,11 @@ export default function Watch() {
   const [title, setTitle] = useState('');
   const [src, setSrc] = useState(null);
   const [mouseOn, setMouseOn] = useState(false);
+  const [controlsVisible, setControlsVisible] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const iframeRef = useRef(null);
   const playerRef = useRef(null);
+  const hideTimer = useRef(null);
 
   const isTv = type === 'tv';
 
@@ -39,6 +42,29 @@ export default function Watch() {
     else setMouseOn(v => !v);
   };
 
+  const showControls = () => {
+    setControlsVisible(true);
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+  };
+
+  const hideControls = () => {
+    setControlsVisible(false);
+  };
+
+  const startHideTimer = () => {
+    if (!isFullscreen) return;
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    hideTimer.current = setTimeout(() => {
+      hideControls();
+    }, 3000);
+  };
+
+  const onUserActivity = () => {
+    if (!isFullscreen) return;
+    showControls();
+    startHideTimer();
+  };
+
   const send = useCallback((msg) => {
     try { iframeRef.current?.contentWindow?.postMessage(msg, EH); } catch {}
   }, []);
@@ -57,10 +83,17 @@ export default function Watch() {
   useEffect(() => {
     const onFsChange = () => {
       const on = !!document.fullscreenElement;
+      setIsFullscreen(on);
       send({ type: 'vidrift:fullscreen-state', on });
       // Report CSS fullscreen state to native so the Android BACK key
       // can exit it in one press instead of navigating away.
       try { window.KenshinView?.fullscreenChanged?.(on); } catch {}
+      if (on) {
+        startHideTimer();
+      } else {
+        if (hideTimer.current) clearTimeout(hideTimer.current);
+        showControls();
+      }
     };
     document.addEventListener('fullscreenchange', onFsChange);
     document.addEventListener('webkitfullscreenchange', onFsChange);
@@ -69,6 +102,25 @@ export default function Watch() {
       document.removeEventListener('webkitfullscreenchange', onFsChange);
     };
   }, [send]);
+
+  // Auto-hide controls after 3s of inactivity when in fullscreen.
+  // Any key/mouse activity brings them back and resets the timer.
+  useEffect(() => {
+    const onActivity = () => {
+      if (!isFullscreen) return;
+      showControls();
+      startHideTimer();
+    };
+    window.addEventListener('keydown', onActivity);
+    window.addEventListener('mousemove', onActivity);
+    window.addEventListener('pointermove', onActivity);
+    return () => {
+      window.removeEventListener('keydown', onActivity);
+      window.removeEventListener('mousemove', onActivity);
+      window.removeEventListener('pointermove', onActivity);
+      if (hideTimer.current) clearTimeout(hideTimer.current);
+    };
+  }, [isFullscreen]);
 
   useEffect(() => {
     const handler = (e) => {
@@ -161,7 +213,7 @@ export default function Watch() {
         )}
       </div>
 
-      <div className="controls-bar">
+      <div className={`controls-bar ${!controlsVisible ? 'controls-hidden' : ''}`}>
         <Link to={`/${isTv ? 'tv' : 'movie'}/${id}`} className="back-btn">← Back</Link>
         <span className="now-playing">{title} {isTv ? `S${season} E${episode}` : ''}</span>
 
