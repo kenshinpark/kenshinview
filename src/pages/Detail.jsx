@@ -98,13 +98,11 @@ export default function Detail({ type }) {
         <div className="overlay" />
         <div className="info">
           <h1>{title}</h1>
-          {media === 'tv' && (
-            <div className="hero-meta">
-              {year && <span>{year}</span>}
-              {rating && <span>★ {rating.toFixed(1)}</span>}
-              {detail.genres && <span>{detail.genres.map(g=>g.name).join(', ')}</span>}
-            </div>
-          )}
+          <div className="hero-meta">
+            {year && <span>{year}</span>}
+            {rating && <span>★ {rating.toFixed(1)}</span>}
+            {detail.genres && <span>{detail.genres.map(g=>g.name).join(', ')}</span>}
+          </div>
           <p>{detail.overview}</p>
           <div className="actions">
             <button className="btn-primary" onClick={() => nav(playPath)}>Play</button>
@@ -142,8 +140,6 @@ export default function Detail({ type }) {
         </>
       )}
 
-      {media !== 'tv' && (
-        <>        {/* Movies use the same overlay layout as series, without season/episode selector */}\n        {backdrop && <img src={backdrop} alt={title} />}\n        <div className="overlay" />\n        <div className="info">\n          <h1>{title}</h1>\n          <div className="hero-meta">\n            {year && <span>{year}</span>}\n            {rating && <span>★ {rating.toFixed(1)}</span>}\n            {detail.genres && <span>{detail.genres.map(g=>g.name).join(', ')}</span>}\n          </div>\n          <p>{detail.overview}</p>\n          <div className="actions">\n            <button className="btn-primary" onClick={() => nav(playPath)}>Play</button>\n            <button className="btn-secondary" onClick={toggleSave}>{saved ? 'Saved' : 'Add to List'}</button>\n          </div>\n        </div>\n      </>)}
 
       {similar.length > 0 && (
         <section style={{marginTop:24}}>
