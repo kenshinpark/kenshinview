@@ -93,7 +93,7 @@ export default function Detail({ type }) {
       <div style={{marginBottom:16}}>
         <Link to="/" className="back-btn">← Back</Link>
       </div>
-      <section className="hero" style={{minHeight:'40vh'}}>
+      <section className="hero" style={{minHeight:'70vh'}}>
         {backdrop && <img src={backdrop} alt={title} />}
         <div className="overlay" />
         <div className="info">
