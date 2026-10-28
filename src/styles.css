@@ -138,7 +138,7 @@ select:focus, input:focus { border-color: rgba(10,132,255,0.6); }
 .watch-page { position: relative; height: 100vh; background: #000; }
 .player-box { position: relative; height: 100%; width: 100%; background: #000; }
 .player-box iframe { width: 100%; height: 100%; border: 0; display: block; }
-.controls-bar { position: absolute; bottom: 0; left: 0; right: 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 12px 16px; background: linear-gradient(to top, rgba(0,0,0,0.85), transparent); border-top: none; backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); z-index: 2; transition: opacity 0.4s ease; }
+.controls-bar { position: absolute; bottom: 0; left: 0; right: 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 12px 16px; background: linear-gradient(to top, rgba(0,0,0,0.92), rgba(0,0,0,0.0)); border-top: none; z-index: 2; transition: opacity 0.4s ease; }
 .controls-hidden { opacity: 0; pointer-events: none; }
 .controls-bar-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-left: auto; }
 .now-playing { font-weight: 600; letter-spacing: -0.01em; }

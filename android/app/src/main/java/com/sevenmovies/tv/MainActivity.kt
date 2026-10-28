@@ -64,6 +64,12 @@ class MainActivity : AppCompatActivity() {
         settings.blockNetworkLoads = false
         settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         settings.mediaPlaybackRequiresUserGesture = false
+        // Prefer GPU/compositor throughput and reduce video stutter on Android TV
+        settings.setRenderPriority(WebSettings.RenderPriority.HIGH)
+        settings.setSupportMultipleWindows(false)
+        settings.useWideViewPort = true
+        settings.loadWithOverviewMode = false
+        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
         settings.allowFileAccess = true
         settings.allowUniversalAccessFromFileURLs = true
         settings.setSupportMultipleWindows(false)
