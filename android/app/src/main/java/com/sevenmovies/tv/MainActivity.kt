@@ -15,6 +15,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
 import kotlin.math.max
 import kotlin.math.min
 
@@ -23,6 +24,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var root: FrameLayout
     private var customView: View? = null
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
+    private var chromeClient: WebChromeClient? = null
+
+    // Tracks whether the WebView is displaying CSS fullscreen (player-box),
+    // so the BACK key can exit it in one press.
+    @Volatile
+    private var isCssFullscreen = false
 
     // On-screen (virtual) mouse for Android TV remotes
     private var cursor: View? = null
@@ -30,7 +37,6 @@ class MainActivity : AppCompatActivity() {
     private var cursorX = 0f
     private var cursorY = 0f
     private var isDragging = false
-    private var lastMoveTime = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,10 +52,13 @@ class MainActivity : AppCompatActivity() {
         settings.domStorageEnabled = true
         settings.loadsImagesAutomatically = true
         settings.blockNetworkLoads = false
-        settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+        settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         settings.mediaPlaybackRequiresUserGesture = false
         settings.allowFileAccess = true
         settings.allowUniversalAccessFromFileURLs = true
+        settings.setSupportMultipleWindows(false)
+        settings.javaScriptCanOpenWindowsAutomatically = false
+
         val assetLoader = androidx.webkit.WebViewAssetLoader.Builder()
             .addPathHandler("/", androidx.webkit.WebViewAssetLoader.AssetsPathHandler(this))
             .build()
@@ -58,19 +67,131 @@ class MainActivity : AppCompatActivity() {
             override fun shouldInterceptRequest(view: WebView, request: android.webkit.WebResourceRequest): android.webkit.WebResourceResponse? {
                 return assetLoader.shouldInterceptRequest(request.url) ?: super.shouldInterceptRequest(view, request)
             }
+
+            override fun shouldOverrideUrlLoading(view: WebView, request: android.webkit.WebResourceRequest): Boolean {
+                val url = request.url
+                // The app only owns the pages under appassets.androidplatform.net.
+                // Any main-frame navigation to another host (or about:blank/null host)
+                // must be blocked to prevent video player ad scripts from navigating
+                // the top-level window away and turning the screen white.
+                if (request.isForMainFrame) {
+                    val host = url.host
+                    if (host == null || !host.contains("appassets.androidplatform.net")) {
+                        return true
+                    }
+                }
+                return false
+            }
+
+            @Suppress("OVERRIDE_DEPRECATION")
+            override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
+                val uri = url.toUri()
+                val host = uri.host
+                if (host == null || !host.contains("appassets.androidplatform.net")) {
+                    return true
+                }
+                return false
+            }
         }
-        // Completely disable any native custom view handling.
-        webView.webChromeClient = object : WebChromeClient() {
+
+        // Properly handle native fullscreen video (e.g. the embedded VidRift
+        // player requesting fullscreen when its play button is tapped).
+        val client = object : WebChromeClient() {
             override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
-                callback?.onCustomViewHidden()
+                // Tear down a previously shown custom view first.
+                if (customView != null) {
+                    onHideCustomView()
+                }
+                if (view == null) return
+                customView = view
+                customViewCallback = callback
+                view.layoutParams = FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+                // The native fullscreen view covers the WebView. Hide the mouse
+                // cursor so it isn't drawn behind it.
+                cursor?.visibility = View.GONE
+                webView.visibility = View.GONE
+                hideCursor()
+                val decor = window.decorView as ViewGroup
+                decor.addView(view)
             }
+
             override fun onHideCustomView() {
-                // Ensure nothing is accidentally left over
+                if (customView != null) {
+                    val decor = window.decorView as ViewGroup
+                    decor.removeView(customView)
+                    customView = null
+                    customViewCallback?.onCustomViewHidden()
+                    customViewCallback = null
+                    webView.visibility = View.VISIBLE
+                    // Restore the mouse cursor (if the mouse is enabled).
+                    if (mouseEnabled) {
+                        cursor?.visibility = View.VISIBLE
+                    }
+                    // CSS fullscreen state is unknown once the native view is removed.
+                    isCssFullscreen = false
+                    // Re-synchronise fullscreen state with the WebView's UI.
+                    syncFullscreenState()
+                }
+            }
+
+            override fun onCreateWindow(
+                view: WebView?,
+                isDialog: Boolean,
+                isUserGesture: Boolean,
+                resultMsg: android.os.Message?
+            ): Boolean {
+                return false
+            }
+
+            private fun hideCursor() {
+                if (mouseEnabled) {
+                    cursor?.visibility = View.GONE
+                }
+            }
+
+            private fun showCursor() {
+                if (mouseEnabled) {
+                    cursor?.visibility = View.VISIBLE
+                }
+            }
+
+            private fun syncFullscreenState() {
+                // Wake the watch UI (if any) so the VidRift-side fullscreen flag
+                // stays in sync with the native fullscreen state.
+                webView.evaluateJavascript(
+                    "if (window.__kenshinFullscreenState) window.__kenshinFullscreenState(!!document.fullscreenElement);",
+                    null
+                )
             }
         }
+        chromeClient = client
+        webView.webChromeClient = client
         webView.addJavascriptInterface(Bridge(), "KenshinView")
         // Enable Chrome remote debugging for diagnostics
-        android.webkit.WebView.setWebContentsDebuggingEnabled(true)
+        WebView.setWebContentsDebuggingEnabled(true)
+
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Exit CSS fullscreen first if active.
+                if (isCssFullscreen) {
+                    webView.post { webView.evaluateJavascript("document.exitFullscreen?.()", null) }
+                    return
+                }
+                if (customView != null) {
+                    chromeClient?.onHideCustomView()
+                } else if (webView.canGoBack()) {
+                    webView.goBack()
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                    isEnabled = true
+                }
+            }
+        })
+
         webView.loadUrl("https://appassets.androidplatform.net/www/index.html")
     }
 
@@ -147,11 +268,6 @@ class MainActivity : AppCompatActivity() {
         ev.recycle()
     }
 
-    private fun sendDown() {
-        lastMoveTime = SystemClock.uptimeMillis()
-        sendTouch(MotionEvent.ACTION_DOWN, lastMoveTime)
-    }
-
     private fun sendUp() {
         val t = SystemClock.uptimeMillis()
         sendTouch(MotionEvent.ACTION_UP, t)
@@ -183,6 +299,20 @@ class MainActivity : AppCompatActivity() {
                 return true
             }
             KeyEvent.KEYCODE_BACK -> {
+                // Exit CSS fullscreen first if active, so one BACK press
+                // leaves fullscreen instead of navigating away.
+                if (isCssFullscreen) {
+                    if (event.action == KeyEvent.ACTION_DOWN) {
+                        webView.post { webView.evaluateJavascript("document.exitFullscreen?.()", null) }
+                    }
+                    return true
+                }
+                // If native fullscreen is active (e.g. iframe video went fullscreen),
+                // exit it first instead of toggling the mouse.
+                if (customView != null) {
+                    chromeClient?.onHideCustomView()
+                    return true
+                }
                 if (isDragging) {
                     sendUp()
                     isDragging = false
@@ -205,18 +335,13 @@ class MainActivity : AppCompatActivity() {
         fun isMouse(): Boolean = mouseEnabled
 
         @JavascriptInterface
+        fun fullscreenChanged(isFullscreen: Boolean) {
+            isCssFullscreen = isFullscreen
+        }
+
+        @JavascriptInterface
         fun log(msg: String) {
             android.util.Log.e("VidRiftWEB", msg)
-        }
-    }
-
-    override fun onBackPressed() {
-        if (customView != null) {
-            (webView.webChromeClient as WebChromeClient).onHideCustomView()
-        } else if (webView.canGoBack()) {
-            webView.goBack()
-        } else {
-            super.onBackPressed()
         }
     }
 }

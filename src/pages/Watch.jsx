@@ -21,8 +21,17 @@ export default function Watch() {
 
   useEffect(() => {
     window.__kenshinMouseState = (on) => setMouseOn(!!on);
+    window.__kenshinFullscreenState = (on) => {
+      // Called from the native onHideCustomView() → syncFullscreenState().
+      // If the parent window is NOT in CSS fullscreen, the iframe's fullscreen
+      // state must be reset so the VidRift player switches back from its
+      // built-in fullscreen controls to the app's custom overlay.
+      if (!on) {
+        try { iframeRef.current?.contentWindow?.postMessage({ type: 'vidrift:fullscreen-state', on: false }, EH); } catch {}
+      }
+    };
     try { setMouseOn(!!window.KenshinView?.isMouse?.()); } catch {}
-    return () => { delete window.__kenshinMouseState; };
+    return () => { delete window.__kenshinMouseState; delete window.__kenshinFullscreenState; };
   }, []);
 
   const toggleMouse = () => {
@@ -47,7 +56,11 @@ export default function Watch() {
   // Parent-owned fullscreen handshake with VidRift (fs=parent)
   useEffect(() => {
     const onFsChange = () => {
-      send({ type: 'vidrift:fullscreen-state', on: !!document.fullscreenElement });
+      const on = !!document.fullscreenElement;
+      send({ type: 'vidrift:fullscreen-state', on });
+      // Report CSS fullscreen state to native so the Android BACK key
+      // can exit it in one press instead of navigating away.
+      try { window.KenshinView?.fullscreenChanged?.(on); } catch {}
     };
     document.addEventListener('fullscreenchange', onFsChange);
     document.addEventListener('webkitfullscreenchange', onFsChange);

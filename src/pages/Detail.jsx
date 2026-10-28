@@ -98,6 +98,13 @@ export default function Detail({ type }) {
         <div className="overlay" />
         <div className="info">
           <h1>{title}</h1>
+          {media === 'tv' && (
+            <div className="hero-meta">
+              {year && <span>{year}</span>}
+              {rating && <span>★ {rating.toFixed(1)}</span>}
+              {detail.genres && <span>{detail.genres.map(g=>g.name).join(', ')}</span>}
+            </div>
+          )}
           <p>{detail.overview}</p>
           <div className="actions">
             <button className="btn-primary" onClick={() => nav(playPath)}>Play</button>
@@ -106,40 +113,45 @@ export default function Detail({ type }) {
         </div>
       </section>
 
-      <div className="detail">
-        <div>{poster && <img className="poster" src={poster} alt={title} />}</div>
-        <div>
-          <p><strong>Year:</strong> {year} · <strong>Rating:</strong> ★ {rating?.toFixed?.(1)}</p>
-          {detail.genres && <p>{detail.genres.map(g=>g.name).join(', ')}</p>}
-          {detail.runtime ? <p><strong>Runtime:</strong> {detail.runtime} min</p> : null}
-          {media === 'tv' && (
-            <div style={{marginTop:16}}>
-              {seasons.length ? (
-                <>
-                  <div style={{display:'flex', gap:12, flexWrap:'wrap'}}>
-                    <label>Season <select value={season} onChange={e=>setSeason(Number(e.target.value))} className="control-select">
-                      {seasons.map(s => <option key={s.id} value={s.season_number}>Season {s.season_number}</option>)}
-                    </select></label>
-                    <label>Episode <select value={episodeSel} onChange={e=>setEpisodeSel(Number(e.target.value))} className="control-select">
-                      {episodes.map(ep => <option key={ep.id} value={ep.episode_number}>E{ep.episode_number} {ep.name}</option>)}
-                    </select></label>
-                  </div>
-                  {episodes.length > 0 && (
-                    <div className="row" style={{marginTop:12}}>
-                      {episodes.map(ep => (
-                        <Link key={ep.id} to={`/tv/${id}/watch?season=${season}&episode=${ep.episode_number}`} className="card card-ep">
-                          <div className="poster" style={{aspectRatio:'16/9'}}>{ep.still_path ? <img src={imgPath(ep.still_path,'w300')} alt={ep.name} /> : null}</div>
-                          <div className="title">E{ep.episode_number} {ep.name}</div>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </>
-              ) : <span style={{color:'var(--muted)',fontSize:13}}>No season data available.</span>}
+      {media === 'tv' && (
+        <>
+          {/* Season selector just below the overlay/hero */}
+          {seasons.length > 0 && (
+            <div className="season-bar">
+              <label>Season <select value={season} onChange={e=>setSeason(Number(e.target.value))} className="control-select">
+                {seasons.map(s => <option key={s.id} value={s.season_number}>Season {s.season_number}</option>)}
+              </select></label>
             </div>
           )}
+
+          {/* Episodes: full-width rows */}
+          {episodes.length > 0 && (
+            <div className="episodes-grid">
+              {episodes.map(ep => (
+                <Link key={ep.id} to={`/tv/${id}/watch?season=${season}&episode=${ep.episode_number}`} className="card card-ep-full">
+                  <div className="poster" style={{width:200, height:120, flexShrink:0}}>{ep.still_path ? <img src={imgPath(ep.still_path,'w300')} alt={ep.name} /> : null}</div>
+                  <div className="title">E{ep.episode_number} {ep.name}</div>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {episodes.length === 0 && seasons.length > 0 && (
+            <p style={{color:'var(--muted)',fontSize:13,marginTop:24,marginBottom:24}}>No episodes available for this season.</p>
+          )}
+        </>
+      )}
+
+      {media !== 'tv' && (
+        <div className="detail">
+          <div>{poster && <img className="poster" src={poster} alt={title} />}</div>
+          <div>
+            <p><strong>Year:</strong> {year} · <strong>Rating:</strong> ★ {rating?.toFixed?.(1)}</p>
+            {detail.genres && <p>{detail.genres.map(g=>g.name).join(', ')}</p>}
+            {detail.runtime ? <p><strong>Runtime:</strong> {detail.runtime} min</p> : null}
+          </div>
         </div>
-      </div>
+      )}
 
       {similar.length > 0 && (
         <section style={{marginTop:24}}>

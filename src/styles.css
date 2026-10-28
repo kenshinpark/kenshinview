@@ -157,6 +157,23 @@ select:focus, input:focus { border-color: rgba(10,132,255,0.6); }
 }
 .control-select, .control-input { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14); color: var(--text); padding: 10px 14px; border-radius: var(--radius-pill); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); font-weight: 500; }
 .control-label { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14); padding: 8px 12px; border-radius: var(--radius-pill); backdrop-filter: blur(22px); }
+/* Hero meta: year, rating, genre inside the overlay/info section */
+.hero-meta { display: flex; gap: 16px; margin: 12px 0 18px 0; font-size: 15px; color: var(--muted); align-items: center; flex-wrap: wrap; }
+.hero-meta span { display: flex; align-items: center; gap: 6px; }
+
+/* Season selector bar just below the hero overlay */
+.season-bar { margin: 20px 0 12px 0; display: flex; gap: 12px; align-items: center; }
+.season-bar label { font-size: 14px; font-weight: 500; color: var(--text); }
+
+/* Full-width episode rows for TV series */
+.episodes-grid { display: flex; flex-direction: column; gap: 12px; }
+.card-ep-full { display: flex; flex-direction: row; gap: 16px; width: 100%; border-radius: var(--radius-sm); overflow: hidden; background: var(--panel); border: var(--glass-border); backdrop-filter: blur(var(--blur)); -webkit-backdrop-filter: blur(var(--blur)); transition: transform .22s ease, box-shadow .22s ease; min-height: 120px; align-items: center; }
+.card-ep-full:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.card-ep-full:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(10,132,255,0.75), 0 0 0 6px rgba(10,132,255,0.25); }
+.card-ep-full .poster { width: 200px; height: 120px; background: #1a1a22; flex-shrink: 0; }
+.card-ep-full .poster img { width: 100%; height: 100%; object-fit: cover; }
+.card-ep-full .title { flex: 1; padding: 12px 16px; font-size: 16px; font-weight: 600; white-space: normal; line-height: 1.3; }
+
 .source-bar button { border-radius: var(--radius-pill); padding: 8px 14px; font-weight: 500; }
 .source-bar button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
