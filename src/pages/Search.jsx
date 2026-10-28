@@ -36,6 +36,7 @@ export default function SearchPage() {
             title: r.title || r.name,
             mediaType: r.media_type,
             poster: IMG(r.poster_path, 'w342'),
+            year: (r.release_date || r.first_air_date || '').slice(0, 4),
           }));
         setItems(list);
       } catch (e) { console.error(e); }
@@ -61,6 +62,7 @@ export default function SearchPage() {
           <Link key={`${it.mediaType}-${it.id}`} to={`/${it.mediaType === 'tv' ? 'tv' : 'movie'}/${it.id}`} className="card" tabIndex={0}>
             <div className="poster">{it.poster ? <img src={it.poster} alt={it.title} /> : null}</div>
             <div className="title">{it.title}</div>
+            {it.year ? <div className="card-year">{it.year}</div> : null}
           </Link>
         ))}
       </div>

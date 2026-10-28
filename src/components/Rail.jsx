@@ -13,6 +13,7 @@ export default function Rail({ title, items }) {
               {it.poster ? <img src={it.poster} alt={it.title} /> : null}
             </div>
             <div className="title">{it.title}</div>
+            {it.year ? <div className="card-year">{it.year}</div> : null}
           </Link>
         ))}
       </div>

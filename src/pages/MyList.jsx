@@ -28,6 +28,7 @@ export default function MyList() {
             <Link to={`/${it.mediaType === 'tv' ? 'tv' : 'movie'}/${it.tmdbId}`}>
               <div className="poster">{it.poster ? <img src={it.poster} alt={it.title} /> : null}</div>
               <div className="title">{it.title}</div>
+            {it.year ? <div className="card-year">{it.year}</div> : null}
             </Link>
             <button onClick={() => remove(it)} style={{width:'100%',borderRadius:0,border:'none',borderTop:'1px solid #333'}}>Remove</button>
           </div>

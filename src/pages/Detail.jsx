@@ -149,6 +149,7 @@ export default function Detail({ type }) {
               <Link key={r.id} to={`/${r.first_air_date?'tv':'movie'}/${r.id}`} className="card card-sm">
                 <div className="poster">{r.poster_path ? <img src={imgPath(r.poster_path,'w300')} alt={r.title||r.name} /> : null}</div>
                 <div className="title">{r.title||r.name}</div>
+                {(r.release_date || r.first_air_date) ? <div className="card-year">{(r.release_date||r.first_air_date).slice(0,4)}</div> : null}
               </Link>
             ))}
           </div>

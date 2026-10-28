@@ -12,6 +12,7 @@ const norm = (x, type) => ({
   backdrop: IMG(x.backdrop_path, 'w780'),
   rating: x.vote_average,
   releaseDate: x.release_date || x.first_air_date,
+  year: (x.release_date || x.first_air_date || '').slice(0, 4),
 });
 
 export default function Home() {

@@ -81,7 +81,7 @@ export default function Discover() {
       }
       const path = type === 'movie' ? '/discover/movie' : '/discover/tv';
       const data = await tmdb(path, params);
-      const norm = (x) => ({ id:x.id, title: x.title||x.name, mediaType: type, poster: IMG(x.poster_path,'w342'), rating: x.vote_average });
+      const norm = (x) => ({ id:x.id, title: x.title||x.name, mediaType: type, poster: IMG(x.poster_path,'w342'), rating: x.vote_average, year:(x.release_date || x.first_air_date || '').slice(0,4) });
       const list = (data.results||[]).map(norm);
       setItems(prev => replace ? list : [...prev, ...list]);
       setTotalPages(data.total_pages || 1);
@@ -132,6 +132,7 @@ export default function Discover() {
           <Link key={`${it.mediaType}-${it.id}`} to={`/${it.mediaType === 'tv' ? 'tv' : 'movie'}/${it.id}`} className="card" tabIndex={0}>
             <div className="poster">{it.poster ? <img src={it.poster} alt={it.title} /> : null}</div>
             <div className="title">{it.title}</div>
+            {it.year ? <div className="card-year">{it.year}</div> : null}
           </Link>
         ))}
       </div>

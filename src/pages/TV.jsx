@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Rail from '../components/Rail.jsx';
 import { tmdb, IMG } from '../tmdb.js';
 
-const norm = (x, type='tv') => ({ id:x.id, title:x.name||x.title, mediaType:type, poster:IMG(x.poster_path,'w342'), rating:x.vote_average, releaseDate:x.first_air_date });
+const norm = (x, type='tv') => ({ id:x.id, title:x.name||x.title, mediaType:type, poster:IMG(x.poster_path,'w342'), rating:x.vote_average, releaseDate:x.first_air_date, year:(x.first_air_date||'').slice(0,4) });
 
 export default function TV() {
   const [popular, setPopular] = useState([]);
@@ -43,6 +43,7 @@ export default function TV() {
           <Link key={`tv-${it.id}`} to={`/tv/${it.id}`} className="card" tabIndex={0}>
             <div className="poster">{it.poster ? <img src={it.poster} alt={it.title} /> : null}</div>
             <div className="title">{it.title}</div>
+            {it.year ? <div className="card-year">{it.year}</div> : null}
           </Link>
         ))}
       </div>

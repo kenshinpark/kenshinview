@@ -153,6 +153,7 @@ export default function Watch() {
               id: Number(id),
               mediaType: media,
               title: titleName,
+              year: (d.release_date || d.first_air_date || '').slice(0, 4),
               poster: IMG(d.poster_path, 'w342'),
               backdrop: IMG(d.backdrop_path, 'w780'),
               ts: Date.now(),
